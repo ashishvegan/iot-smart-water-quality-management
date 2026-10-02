@@ -83,17 +83,21 @@ Then navigate to `http://localhost:8000` (or `https://waterquality.infinityfree.
   - **Password:** `admin123`
 
 ### 2. Flashing the ESP32 Code
-1. Open [`esp32/esp32_water_monitor.ino`](esp32/esp32_water_monitor.ino) in the Arduino IDE.
+1. Open [`esp32/esp32_water_monitor/esp32_water_monitor.ino`](esp32/esp32_water_monitor/esp32_water_monitor.ino) in the Arduino IDE.
 2. In **Tools -> Manage Libraries...**, install:
    - `LiquidCrystal_I2C`
    - `OneWire`
    - `DallasTemperature`
 3. Select board: **ESP32 Dev Module** (or DOIT ESP32 DEVKIT V1).
-4. Update the default Wi-Fi SSID and Web Server IP/Domain in the sketch:
-   - Default Server: `waterquality.infinityfree.io`
-   - Scheme: `https://` (supported via `WiFiClientSecure`)
-   - Or configure it dynamically via the onboard **Setup Mode AP** (`192.168.4.1`) or the Web App's **Settings -> Wi-Fi & Cloud Server** section.
-5. Upload the code to your ESP32.
+4. **Tools settings:**
+   - **Flash Frequency:** `40MHz`
+   - **Flash Mode:** `DIO`
+   - **Partition Scheme:** `Huge APP (3MB No OTA/1MB SPIFFS)` or `Default 4MB with spiffs`
+5. Turn ON your phone's personal hotspot or Wi-Fi router:
+   - **Hotspot Name (SSID):** `ESP32`
+   - **Password:** `12345678`
+   - **Band:** `2.4 GHz` (Turn ON "Maximize Compatibility" on iPhone)
+6. Upload the code to your ESP32. It will connect directly to `ESP32` and start sending live telemetry to `https://waterquality.infinityfree.io`!
 
 ---
 

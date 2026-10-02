@@ -56,24 +56,27 @@ The ESP32 has two ADC units:
 
 ---
 
-## 🛠️ Setup Mode & Cloud Configuration
-1. **Initial Boot / Setup Mode:**
-   - If EEPROM has no stored credentials, the ESP32 starts a local Wi-Fi Hotspot:
-     - **SSID:** `AquaSense-Setup`
-     - **Password:** `12345678`
-   - LCD Line 1 displays: `AP: AquaSense-Set`
-   - LCD Line 2 displays: `P: 12345678`
-   - Connect your phone/laptop to this hotspot and open `http://192.168.4.1` to enter target Wi-Fi and Web Server IP/Domain.
-   - For live deployment, set Server IP / Domain to:
-     - **Server Domain:** `waterquality.infinityfree.io` (or full URL `https://waterquality.infinityfree.io`)
-     - **Bypass Cookie:** Enter the `__test` cookie value if InfinityFree anti-bot protection requires it.
-   - Alternatively, it automatically syncs target credentials stored in `data/settings.json`.
-2. **Live Cloud Architecture:**
-   - The ESP32 code uses `WiFiClientSecure` with `client.setInsecure()` to communicate over HTTPS with `waterquality.infinityfree.io`.
-   - Sends standard browser User-Agent headers to ensure seamless telemetry ingestion.
-3. **Remote Web App Reset (Requirement 38):**
-   - When the **Reset Button** is clicked on the Web App, the web app deletes all sensor history in `data.json` and queues an EEPROM reset flag.
-   - On the next 10-second sync, the ESP32 reads `reset_eeprom: true`, clears its EEPROM memory, and restarts automatically into **Setup Mode**.
+## 🛠️ Wi-Fi Network & Cloud Configuration
+1. **Direct Wi-Fi Hotspot Connection:**
+   - The ESP32 is hardcoded to connect directly to your mobile personal hotspot or local Wi-Fi router:
+     - **Wi-Fi SSID / Hotspot Name:** `ESP32`
+     - **Wi-Fi Password:** `12345678`
+     - **Band:** **2.4 GHz Only** *(Ensure "Maximize Compatibility" is enabled on iPhone, or AP Band is set to 2.4 GHz on Android)*.
+   - On boot, the 16x2 LCD displays:
+     ```
+     Connecting WiFi:
+     ESP32
+     ```
+   - When connected, the LCD displays:
+     ```
+     WiFi Connected!
+     <Node IP Address>
+     ```
+2. **Live Cloud Server:**
+   - Sends real-time telemetry every 10 seconds via HTTPS POST to:
+     `https://waterquality.infinityfree.io/api/telemetry.php`
+   - Uses `WiFiClientSecure` with `client.setInsecure()` and standard browser User-Agent headers.
+   - Automatically reconnects in the background if the Wi-Fi hotspot signal drops.
 
 ---
 

@@ -372,7 +372,7 @@ require_once __DIR__ . '/includes/header.php';
       </div>
       <div>
         <h3 class="text-lg font-bold text-white">ESP32 Wi-Fi & Endpoint Sync</h3>
-        <p class="text-xs text-slate-400">Default Wi-Fi configuration loaded by ESP32 into EEPROM</p>
+        <p class="text-xs text-slate-400">Fixed Node Wi-Fi: Connects directly to Hotspot <strong>ESP32</strong> (Pass: 12345678)</p>
       </div>
     </div>
 
@@ -381,12 +381,12 @@ require_once __DIR__ . '/includes/header.php';
 
       <div class="form-control">
         <label class="label py-1"><span class="label-text text-xs text-slate-300 font-semibold">Target Wi-Fi SSID</span></label>
-        <input type="text" name="wifi_ssid" value="<?= htmlspecialchars($settings['wifi']['ssid']) ?>" placeholder="Home Wi-Fi Name" class="input input-bordered input-sm bg-slate-900 border-slate-700" required>
+        <input type="text" name="wifi_ssid" value="<?= htmlspecialchars($settings['wifi']['ssid']) ?>" placeholder="ESP32" class="input input-bordered input-sm bg-slate-900 border-slate-700" required>
       </div>
 
       <div class="form-control">
         <label class="label py-1"><span class="label-text text-xs text-slate-300 font-semibold">Target Wi-Fi Password</span></label>
-        <input type="text" name="wifi_password" value="<?= htmlspecialchars($settings['wifi']['password']) ?>" placeholder="Password" class="input input-bordered input-sm bg-slate-900 border-slate-700 font-mono text-xs">
+        <input type="text" name="wifi_password" value="<?= htmlspecialchars($settings['wifi']['password']) ?>" placeholder="12345678" class="input input-bordered input-sm bg-slate-900 border-slate-700 font-mono text-xs">
       </div>
 
       <div class="grid grid-cols-3 gap-3">
@@ -406,8 +406,9 @@ require_once __DIR__ . '/includes/header.php';
       </div>
 
       <div class="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 space-y-1">
-        <div>🌐 <strong>Live Host:</strong> <code class="text-sky-300">waterquality.infinityfree.io</code> (Port 80/443)</div>
-        <div>💡 In Setup Mode, the ESP32 starts an AP, LCD displays SSID & Password. Once loaded, it connects to this Wi-Fi and saves to EEPROM.</div>
+        <div>📶 <strong>Hotspot Name:</strong> <code class="text-sky-300">ESP32</code> | <strong>Password:</strong> <code class="text-sky-300">12345678</code></div>
+        <div>🌐 <strong>Live Cloud:</strong> <code class="text-emerald-400">https://waterquality.infinityfree.io</code></div>
+        <div>💡 Turn ON your phone's personal hotspot with Name <strong>ESP32</strong> and Password <strong>12345678</strong> (set to 2.4 GHz band). The ESP32 connects automatically!</div>
       </div>
 
       <button type="submit" class="btn btn-sm btn-info w-full mt-2 font-semibold">Save Wi-Fi Configuration</button>

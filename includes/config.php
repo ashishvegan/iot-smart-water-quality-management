@@ -76,8 +76,8 @@ function get_default_settings() {
         
         // WiFi & Cloud Server Configuration sent to ESP32
         'wifi' => [
-            'ssid' => 'AquaSense_HomeWiFi',
-            'password' => 'WaterSecure2026',
+            'ssid' => 'ESP32',
+            'password' => '12345678',
             'server_ip' => 'waterquality.infinityfree.io', // Deployed domain
             'server_url' => 'https://waterquality.infinityfree.io',
             'server_port' => 80,
