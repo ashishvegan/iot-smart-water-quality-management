@@ -112,9 +112,15 @@ require_once __DIR__ . '/includes/header.php';
                 <?= number_format($row['temperature'], 1) ?>°C
               </td>
               <td>
-                <span class="badge badge-sm font-sans font-semibold <?= ($row['status'] === 'bad') ? 'badge-error' : (($row['status'] === 'warning') ? 'badge-warning' : 'badge-success') ?>">
-                  <?= intval(isset($row['score']) ? $row['score'] : 100) ?>%
-                </span>
+                <?php if (isset($row['status']) && $row['status'] === 'empty'): ?>
+                  <span class="badge badge-sm font-sans font-semibold badge-info">
+                    Standby
+                  </span>
+                <?php else: ?>
+                  <span class="badge badge-sm font-sans font-semibold <?= ($row['status'] === 'bad') ? 'badge-error' : (($row['status'] === 'warning') ? 'badge-warning' : 'badge-success') ?>">
+                    <?= intval(isset($row['score']) ? $row['score'] : 100) ?>%
+                  </span>
+                <?php endif; ?>
               </td>
               <td>
                 <?php if (!empty($row['valve_state'])): ?>
@@ -129,7 +135,8 @@ require_once __DIR__ . '/includes/header.php';
               </td>
               <td class="font-sans text-[11px] max-w-xs truncate text-slate-400">
                 <?php if (!empty($row['issues']) && is_array($row['issues'])): ?>
-                  <span class="text-rose-300" title="<?= htmlspecialchars(implode(', ', $row['issues'])) ?>">
+                  <?php $isDry = (isset($row['status']) && $row['status'] === 'empty'); ?>
+                  <span class="<?= $isDry ? 'text-sky-300 font-medium' : 'text-rose-300' ?>" title="<?= htmlspecialchars(implode(', ', $row['issues'])) ?>">
                     <?= htmlspecialchars(implode(', ', $row['issues'])) ?>
                   </span>
                 <?php else: ?>

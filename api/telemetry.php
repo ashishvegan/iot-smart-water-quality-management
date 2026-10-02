@@ -63,7 +63,10 @@ $currentValveState = intval($deviceState['valve_state']);
 $valveMode = isset($settings['valve_control']['mode']) ? $settings['valve_control']['mode'] : 'auto';
 
 if ($valveMode === 'auto') {
-    if ($evaluation['is_bad']) {
+    if (isset($evaluation['status']) && $evaluation['status'] === 'empty') {
+        // Keep valve OPEN so water can flow in and submerge the sensors
+        $currentValveState = 1; // SV ON: Solenoid Valve Open / Water Flow Enabled
+    } elseif ($evaluation['is_bad']) {
         if (!empty($settings['valve_control']['auto_shutoff_on_bad'])) {
             $currentValveState = 0; // SV OFF: Solenoid Valve Closed / Water Flow Cut Off
         }

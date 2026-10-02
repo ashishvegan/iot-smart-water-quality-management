@@ -156,8 +156,10 @@ void updateLCDDisplay(float tds, float turbidity, float tempC, float phVal) {
     lcd.clear();
   }
 
+  bool isDry = (tds <= 5.0 && (turbidity > 200 || phVal > 11.5));
+
   if (lcdPage == 0) {
-    // Page 1: TDS, SV Status & Turbidity
+    // Page 1: TDS, SV Status & Turbidity / Dry Status
     lcd.setCursor(0, 0);
     lcd.print("TDS:");
     lcd.print((int)tds);
@@ -167,14 +169,22 @@ void updateLCDDisplay(float tds, float turbidity, float tempC, float phVal) {
     lcd.print(valveState ? "SV:ON" : "SV:OFF");
 
     lcd.setCursor(0, 1);
-    lcd.print("Turb:");
-    lcd.print(turbidity, 1);
-    lcd.print(" NTU");
+    if (isDry) {
+      lcd.print("Pipe: DRY(EMPTY)");
+    } else {
+      lcd.print("Turb:");
+      lcd.print(turbidity, 1);
+      lcd.print(" NTU");
+    }
   } else {
     // Page 2: pH, Temperature & Wi-Fi IP
     lcd.setCursor(0, 0);
-    lcd.print("pH:");
-    lcd.print(phVal, 2);
+    if (isDry) {
+      lcd.print("pH:DRY ");
+    } else {
+      lcd.print("pH:");
+      lcd.print(phVal, 2);
+    }
     
     lcd.setCursor(9, 0);
     lcd.print("T:");

@@ -226,6 +226,20 @@ function evaluate_water_quality($data, $thresholds) {
     $tempMin = isset($thresholds['temp_min']) ? $thresholds['temp_min'] : 15.0;
     $tempMax = isset($thresholds['temp_max']) ? $thresholds['temp_max'] : 35.0;
 
+    // Detect Empty Pipe / Probes Dry in Air
+    // When probes are in air: TDS = 0V (0 ppm), Turbidity = ~1.38V (1450 NTU), pH = 0V (12.76 pH)
+    // Physically, water with 1450 NTU mud would have TDS > 1000 ppm. TDS = 0 with high turbidity proves sensors are dry in air.
+    $isEmptyPipe = ($tds <= 5.0 && ($turbidity > 200 || $ph > 11.5));
+    if ($isEmptyPipe) {
+        return [
+            'status' => 'empty',
+            'is_bad' => false,
+            'is_empty' => true,
+            'issues' => ['Pipe is Empty / Probes are Dry in Air (No Water Flow Detected)'],
+            'score' => 0
+        ];
+    }
+
     // Check TDS
     if ($tds > $tdsMax) {
         $issues[] = "TDS ({$tds} ppm) exceeds safe maximum ({$tdsMax} ppm)";

@@ -291,7 +291,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elScore) elScore.textContent = scoreVal + '%';
     if (elScoreCircle) {
       elScoreCircle.style.setProperty('--value', scoreVal);
-      if (latest.status === 'bad') {
+      if (latest.status === 'empty') {
+        elScoreCircle.className = 'radial-progress text-sky-400 font-bold';
+      } else if (latest.status === 'bad') {
         elScoreCircle.className = 'radial-progress text-red-500 font-bold';
       } else if (latest.status === 'warning') {
         elScoreCircle.className = 'radial-progress text-amber-500 font-bold';
@@ -300,7 +302,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     if (elScoreText) {
-      if (latest.status === 'bad') {
+      if (latest.status === 'empty') {
+        elScoreText.textContent = 'STANDBY / PIPE EMPTY (NO WATER)';
+        elScoreText.className = 'text-sm font-bold text-sky-400 uppercase tracking-wide';
+      } else if (latest.status === 'bad') {
         elScoreText.textContent = 'CRITICAL / CONTAMINATED';
         elScoreText.className = 'text-sm font-bold text-red-400 uppercase tracking-wide';
       } else if (latest.status === 'warning') {
