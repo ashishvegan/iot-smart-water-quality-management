@@ -12,9 +12,9 @@
  *   - 16x2 LCD I2C: SDA=GPIO 21, SCL=GPIO 22 (Address 0x27)
  *
  * Network Configuration:
- *   - Fixed Wi-Fi Hotspot: "ESP32"
- *   - Fixed Wi-Fi Password: "12345678"
- *   - Target Cloud Server: https://waterquality.infinityfree.io/api/telemetry.php
+ *   - Wi-Fi Hotspot: "ESP32" (Password: "12345678", 2.4 GHz)
+ *   - Cloud Target: https://waterquality.infinityfree.io/api/telemetry.php
+ *   - InfinityFree Anti-Bot Bypass: Built-in hardware mbedTLS AES-128-CBC Challenge Solver
  */
 
 #include <WiFi.h>
@@ -24,6 +24,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include "mbedtls/aes.h"
 
 // ==============================================================================
 // HARDWARE PIN DEFINITIONS (ESP32 30-PIN)
@@ -37,10 +38,13 @@
 // ==============================================================================
 // HARDCODED WI-FI & CLOUD SERVER CONFIGURATION
 // ==============================================================================
-const char* WIFI_SSID     = "ESP32";
-const char* WIFI_PASS     = "12345678";
-const char* SERVER_URL    = "https://waterquality.infinityfree.io/api/telemetry.php";
-const char* SERVER_COOKIE = ""; // Optional bypass cookie if needed
+const char* WIFI_SSID   = "ESP32";
+const char* WIFI_PASS   = "12345678";
+const char* SERVER_URL  = "https://waterquality.infinityfree.io/api/telemetry.php";
+const char* AUTH_URL    = "https://waterquality.infinityfree.io/?i=1";
+
+// InfinityFree security cookie (pre-calculated from your challenge + auto-updated)
+String serverCookie = "__test=486db43ec712b84401588e1de9b5f72f";
 
 // ==============================================================================
 // PERIPHERALS INITIALIZATION
@@ -58,6 +62,7 @@ const unsigned long TELEMETRY_INTERVAL_MS = 10000; // 10 Seconds real-time post
 unsigned long lcdPageTimer = 0;
 uint8_t lcdPage = 0;
 bool valveState = true; // true = SV ON (Flow Enabled)
+bool isSolvingChallenge = false;
 
 // ==============================================================================
 // SOLENOID VALVE RELAY CONTROL (Active LOW)
@@ -87,33 +92,28 @@ float readWaterTemperature() {
 }
 
 // Read TDS Sensor (Total Dissolved Solids in ppm)
-// Uses temperature compensation formula for accurate ppm calculation
 float readTDSSensor(float currentTempC) {
   int analogVal = analogRead(PIN_TDS);
   float voltage = (analogVal / 4095.0) * 3.3; // ESP32 12-bit ADC (3.3V reference)
   
-  // Temperature compensation formula: fCampensation = 1.0 + 0.02 * (temp - 25.0)
   float compensationCoefficient = 1.0 + 0.02 * (currentTempC - 25.0);
   float compensationVoltage = voltage / compensationCoefficient;
   
-  // Convert voltage value to TDS ppm value
   float tdsValue = (133.42 * pow(compensationVoltage, 3) - 255.86 * pow(compensationVoltage, 2) + 857.39 * compensationVoltage) * 0.5;
   if (tdsValue < 0) tdsValue = 0;
   return tdsValue;
 }
 
 // Read Turbidity Sensor (NTU)
-// Sensor module maps high turbidity (dirty) to lower voltage
 float readTurbiditySensor() {
   int analogVal = analogRead(PIN_TURBIDITY);
   float voltage = (analogVal / 4095.0) * 3.3;
   
-  // Clean water ~ 2.5V - 3.0V (0-5 NTU)
   float ntu = 0;
   if (voltage < 1.0) {
-    ntu = 3000; // Extremely cloudy
+    ntu = 3000;
   } else if (voltage >= 2.8) {
-    ntu = 0.5;  // Crystal clear
+    ntu = 0.5;
   } else {
     ntu = -1120.4 * pow(voltage, 2) + 5742.3 * voltage - 4352.9;
     if (ntu < 0) ntu = 0;
@@ -122,10 +122,8 @@ float readTurbiditySensor() {
 }
 
 // Read pH Sensor (Po Analog Pin)
-// Standard pH probe calibration: 2.5V is neutral pH 7.0
 float readpHSensor() {
   int rawADC = 0;
-  // Average 10 samples to smooth analog noise
   for (int i = 0; i < 10; i++) {
     rawADC += analogRead(PIN_PH);
     delay(5);
@@ -144,7 +142,7 @@ float readInternalCpuTemp() {
   #if defined(temprature_sens_read)
     return (temprature_sens_read() - 32) / 1.8;
   #else
-    return 42.5; // Typical operating baseline
+    return 42.5;
   #endif
 }
 
@@ -152,7 +150,6 @@ float readInternalCpuTemp() {
 // 16x2 LCD DISPLAY ROTATION
 // ==============================================================================
 void updateLCDDisplay(float tds, float turbidity, float tempC, float phVal) {
-  // Rotate between 2 informative display pages every 3 seconds
   if (millis() - lcdPageTimer > 3000) {
     lcdPageTimer = millis();
     lcdPage = (lcdPage + 1) % 2;
@@ -196,6 +193,63 @@ void updateLCDDisplay(float tds, float turbidity, float tempC, float phVal) {
 }
 
 // ==============================================================================
+// INFINITYFREE AES-128-CBC CHALLENGE SOLVER (AUTOMATIC)
+// ==============================================================================
+String solveInfinityFreeChallenge(const String& html) {
+  int idxA = html.indexOf("toNumbers(\"");
+  if (idxA < 0) return "";
+  String hexA = html.substring(idxA + 11, idxA + 43);
+
+  int idxB = html.indexOf("toNumbers(\"", idxA + 43);
+  if (idxB < 0) return "";
+  String hexB = html.substring(idxB + 11, idxB + 43);
+
+  int idxC = html.indexOf("toNumbers(\"", idxB + 43);
+  if (idxC < 0) return "";
+  String hexC = html.substring(idxC + 11, idxC + 43);
+
+  if (hexA.length() != 32 || hexB.length() != 32 || hexC.length() != 32) return "";
+
+  unsigned char key[16], iv[16], cipher[16], plain[16];
+  for (int i = 0; i < 16; i++) {
+    key[i] = (unsigned char)strtol(hexA.substring(i * 2, i * 2 + 2).c_str(), NULL, 16);
+    iv[i] = (unsigned char)strtol(hexB.substring(i * 2, i * 2 + 2).c_str(), NULL, 16);
+    cipher[i] = (unsigned char)strtol(hexC.substring(i * 2, i * 2 + 2).c_str(), NULL, 16);
+  }
+
+  mbedtls_aes_context aes;
+  mbedtls_aes_init(&aes);
+  mbedtls_aes_setkey_dec(&aes, key, 128);
+  mbedtls_aes_crypt_cbc(&aes, MBEDTLS_AES_DECRYPT, 16, iv, cipher, plain);
+  mbedtls_aes_free(&aes);
+
+  char cookieHex[33];
+  for (int i = 0; i < 16; i++) {
+    sprintf(cookieHex + (i * 2), "%02x", plain[i]);
+  }
+  cookieHex[32] = '\0';
+  return String(cookieHex);
+}
+
+// Validate cookie with InfinityFree ByetHost firewall
+void authorizeSecuritySession(const String& cookie) {
+  HTTPClient authHttp;
+  WiFiClientSecure authClient;
+  authClient.setInsecure();
+
+  authHttp.begin(authClient, AUTH_URL);
+  authHttp.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+  authHttp.addHeader("Accept", "*/*");
+  authHttp.addHeader("Cookie", cookie);
+  authHttp.setTimeout(8000);
+
+  Serial.println("Validating session with InfinityFree firewall...");
+  int code = authHttp.GET();
+  Serial.printf("Firewall Auth Response: %d\n", code);
+  authHttp.end();
+}
+
+// ==============================================================================
 // TELEMETRY HTTP/HTTPS POST TO WEB DASHBOARD API
 // ==============================================================================
 void sendTelemetryToDashboard(float tds, float turbidity, float tempC, float phVal) {
@@ -213,8 +267,8 @@ void sendTelemetryToDashboard(float tds, float turbidity, float tempC, float phV
   http.addHeader("Content-Type", "application/json");
   http.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
   http.addHeader("Accept", "*/*");
-  if (strlen(SERVER_COOKIE) > 0) {
-    http.addHeader("Cookie", SERVER_COOKIE);
+  if (serverCookie.length() > 0) {
+    http.addHeader("Cookie", serverCookie);
   }
   http.setTimeout(8000);
 
@@ -243,6 +297,29 @@ void sendTelemetryToDashboard(float tds, float turbidity, float tempC, float phV
 
   if (httpCode > 0) {
     String payload = http.getString();
+
+    // Check if InfinityFree returned its Javascript AES challenge
+    if (payload.indexOf("aes.js") > 0 || payload.indexOf("slowAES") > 0) {
+      Serial.println("InfinityFree security challenge received! Solving AES challenge...");
+      http.end();
+
+      if (!isSolvingChallenge) {
+        isSolvingChallenge = true;
+        String solvedHex = solveInfinityFreeChallenge(payload);
+        if (solvedHex.length() > 0) {
+          serverCookie = "__test=" + solvedHex;
+          Serial.println("Challenge Solved! New Cookie: " + serverCookie);
+          authorizeSecuritySession(serverCookie);
+          isSolvingChallenge = false;
+          // Immediately re-post telemetry with new authorized session
+          sendTelemetryToDashboard(tds, turbidity, tempC, phVal);
+          return;
+        }
+        isSolvingChallenge = false;
+      }
+      return;
+    }
+
     Serial.println("Server Response (" + String(httpCode) + "): " + payload);
 
     // Parse Valve State from server response
@@ -323,6 +400,9 @@ void setup() {
     lcd.setCursor(0, 1);
     lcd.print(WiFi.localIP().toString());
     delay(2000);
+
+    // Perform initial session authorization with InfinityFree ByetHost firewall
+    authorizeSecuritySession(serverCookie);
   } else {
     Serial.println("\nWi-Fi connection pending. Node will auto-reconnect in loop...");
     lcd.clear();
