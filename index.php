@@ -20,7 +20,7 @@ $latest = !empty($recent) ? end($recent) : [
     'ph' => 7.2,
     'score' => 96,
     'status' => 'good',
-    'timestamp' => date('Y-m-d H:i:s'),
+    'timestamp' => date(DATETIME_FORMAT),
     'issues' => [],
     'valve_state' => 1,
     'valve_mode' => 'auto'
@@ -83,7 +83,7 @@ require_once __DIR__ . '/includes/header.php';
       <span id="deviceOnlineDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 pulse-indicator"></span>
       <span id="deviceOnlineText" class="font-semibold text-emerald-400">ESP32 Connected</span>
       <span class="text-slate-600">|</span>
-      <span class="text-slate-400 font-mono text-[11px]" id="lastSyncText"><?= htmlspecialchars($latest['timestamp']) ?></span>
+      <span class="text-slate-400 font-mono text-[11px]" id="lastSyncText"><?= htmlspecialchars(format_datetime(isset($latest['epoch']) ? $latest['epoch'] : (isset($latest['timestamp']) ? $latest['timestamp'] : time()))) ?></span>
     </div>
 
     <!-- Quick Simulation Tools -->

@@ -7,6 +7,14 @@
 @ini_set('always_populate_raw_post_data', -1);
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_WARNING);
 
+// Set System Timezone to Asia/Kolkata (+05:30)
+date_default_timezone_set('Asia/Kolkata');
+
+// Date & Time Formatting Standards (Requirement 21)
+define('DATETIME_FORMAT', 'd-m-Y h:i A'); // DD-MM-YYYY and HH:mm AM/PM
+define('TIME_FORMAT', 'h:i A');           // HH:mm AM/PM
+define('DATE_FORMAT', 'd-m-Y');           // DD-MM-YYYY
+
 // Start session safely if not started already
 if (session_status() == PHP_SESSION_NONE && !headers_sent()) {
     @session_start();

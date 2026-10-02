@@ -28,20 +28,45 @@ $footerText = !empty($settings['footer_text'])
         <span class="text-sky-500">•</span>
         <span>Relay 1: Active LOW</span>
         <span class="text-sky-500">•</span>
-        <span id="systemClock"><?= date('H:i:s') ?></span>
+        <span id="systemClock"><?= date(DATETIME_FORMAT) ?></span>
       </div>
     </div>
   </footer>
 
   <script>
-    // Simple footer clock updater
-    setInterval(() => {
+    // Live Asia/Kolkata +5:30 Clock Updater in DD-MM-YYYY and HH:mm AM/PM
+    const updateFooterClock = () => {
       const clockEl = document.getElementById('systemClock');
       if (clockEl) {
-        const d = new Date();
-        clockEl.textContent = d.toTimeString().split(' ')[0];
+        const now = new Date();
+        const options = {
+          timeZone: 'Asia/Kolkata',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        };
+        // Format: DD-MM-YYYY, hh:mm:ss AM/PM
+        const formatter = new Intl.DateTimeFormat('en-IN', options);
+        const parts = formatter.formatToParts(now);
+        let day='', month='', year='', hour='', min='', sec='', dayPeriod='';
+        parts.forEach(p => {
+          if (p.type === 'day') day = p.value;
+          if (p.type === 'month') month = p.value;
+          if (p.type === 'year') year = p.value;
+          if (p.type === 'hour') hour = p.value;
+          if (p.type === 'minute') min = p.value;
+          if (p.type === 'second') sec = p.value;
+          if (p.type === 'dayPeriod') dayPeriod = p.value.toUpperCase();
+        });
+        clockEl.textContent = `${day}-${month}-${year} ${hour}:${min} ${dayPeriod}`;
       }
-    }, 1000);
+    };
+    setInterval(updateFooterClock, 1000);
+    updateFooterClock();
   </script>
 </body>
 </html>

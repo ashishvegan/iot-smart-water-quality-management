@@ -95,7 +95,7 @@ require_once __DIR__ . '/includes/header.php';
           <?php foreach ($records as $row): ?>
             <tr class="hover:bg-sky-950/20 transition-colors">
               <td class="whitespace-nowrap text-slate-300 font-sans font-medium">
-                <?= htmlspecialchars($row['timestamp']) ?>
+                <?= htmlspecialchars(format_datetime(isset($row['epoch']) ? $row['epoch'] : $row['timestamp'])) ?>
               </td>
               <td>
                 <span class="font-bold text-sky-400"><?= number_format($row['tds'], 1) ?></span>

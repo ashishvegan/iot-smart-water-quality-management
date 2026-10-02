@@ -86,7 +86,7 @@ if ($evaluation['is_bad'] && !empty($settings['telegram']['enabled'])) {
     if (($now - $lastAlert) >= $cooldown) {
         $alertMsg = "⚠️ <b>WATER QUALITY CRITICAL ALERT!</b>\n";
         $alertMsg .= "System: <b>" . htmlspecialchars($settings['app_name']) . "</b>\n";
-        $alertMsg .= "Time: " . date('Y-m-d H:i:s') . "\n\n";
+        $alertMsg .= "Time: " . date(DATETIME_FORMAT) . " IST\n\n";
         $alertMsg .= "📊 <b>Sensor Readings:</b>\n";
         $alertMsg .= "• TDS: <b>{$tds} ppm</b> (Limit: {$settings['thresholds']['tds_max']})\n";
         $alertMsg .= "• Turbidity: <b>{$turbidity} NTU</b> (Limit: {$settings['thresholds']['turbidity_max']})\n";
@@ -108,7 +108,7 @@ if ($evaluation['is_bad'] && !empty($settings['telegram']['enabled'])) {
 // Construct Log Record
 $record = [
     'id' => time() . '_' . rand(100, 999),
-    'timestamp' => date('Y-m-d H:i:s'),
+    'timestamp' => date(DATETIME_FORMAT),
     'epoch' => $now,
     'tds' => $tds,
     'turbidity' => $turbidity,
@@ -132,7 +132,7 @@ $resetEepromPending = !empty($deviceState['reset_eeprom_pending']);
 update_device_state([
     'valve_state' => $currentValveState,
     'valve_mode' => $valveMode,
-    'last_ping' => date('Y-m-d H:i:s'),
+    'last_ping' => date(DATETIME_FORMAT),
     'ip_address' => $deviceIp,
     'rssi' => $rssi,
     'free_ram' => $freeRam,

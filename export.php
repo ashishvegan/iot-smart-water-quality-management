@@ -18,7 +18,7 @@ usort($records, function($a, $b) {
     return $tB - $tA;
 });
 
-$filename = 'AquaSense_Water_Records_' . date('Y-m-d_His') . '.csv';
+$filename = 'AquaSense_Water_Records_' . date('d-m-Y_h-i-s_A') . '.csv';
 
 header('Content-Type: text/csv; charset=utf-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -50,7 +50,7 @@ foreach ($records as $r) {
     $issuesText = !empty($r['issues']) && is_array($r['issues']) ? implode(' | ', $r['issues']) : 'Normal';
     
     $rId = isset($r['id']) ? $r['id'] : '';
-    $rTime = isset($r['timestamp']) ? $r['timestamp'] : '';
+    $rTime = format_datetime(isset($r['epoch']) ? $r['epoch'] : (isset($r['timestamp']) ? $r['timestamp'] : time()));
     $rTds = isset($r['tds']) ? $r['tds'] : '';
     $rTurb = isset($r['turbidity']) ? $r['turbidity'] : '';
     $rTemp = isset($r['temperature']) ? $r['temperature'] : '';

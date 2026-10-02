@@ -102,6 +102,24 @@ function update_device_state($updates) {
 }
 
 /**
+ * Format timestamp or epoch to DD-MM-YYYY hh:mm AM/PM (Asia/Kolkata)
+ */
+function format_datetime($epochOrString) {
+    if (empty($epochOrString)) return '';
+    $ts = is_numeric($epochOrString) ? intval($epochOrString) : strtotime($epochOrString);
+    return date(DATETIME_FORMAT, $ts);
+}
+
+/**
+ * Format timestamp or epoch to hh:mm AM/PM (Asia/Kolkata)
+ */
+function format_time($epochOrString) {
+    if (empty($epochOrString)) return '';
+    $ts = is_numeric($epochOrString) ? intval($epochOrString) : strtotime($epochOrString);
+    return date(TIME_FORMAT, $ts);
+}
+
+/**
  * Get all users
  */
 function get_users() {
@@ -114,7 +132,7 @@ function get_users() {
                 'password' => password_hash('admin123', PASSWORD_DEFAULT),
                 'role' => 'admin',
                 'name' => 'Administrator',
-                'created_at' => date('Y-m-d H:i:s')
+                'created_at' => date(DATETIME_FORMAT)
             ]
         ];
         write_json_file(USERS_FILE, $defaultAdmin);
@@ -143,7 +161,7 @@ function register_user($username, $password, $name = '') {
         'password' => password_hash($password, PASSWORD_DEFAULT),
         'role' => count($users) === 0 ? 'admin' : 'user',
         'name' => !empty($name) ? trim($name) : ucfirst($username),
-        'created_at' => date('Y-m-d H:i:s')
+        'created_at' => date(DATETIME_FORMAT)
     ];
     
     if (write_json_file(USERS_FILE, $users)) {
@@ -328,7 +346,7 @@ function append_sensor_record($record) {
         $record['id'] = time() . '_' . rand(100, 999);
     }
     if (!isset($record['timestamp'])) {
-        $record['timestamp'] = date('Y-m-d H:i:s');
+        $record['timestamp'] = date(DATETIME_FORMAT);
     }
     if (!isset($record['epoch'])) {
         $record['epoch'] = time();

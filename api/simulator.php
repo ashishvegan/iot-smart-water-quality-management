@@ -37,7 +37,7 @@ if ($action === 'seed_history') {
         
         $records[] = [
             'id' => $timestamp . '_' . rand(100, 999),
-            'timestamp' => date('Y-m-d H:i:s', $timestamp),
+            'timestamp' => date(DATETIME_FORMAT, $timestamp),
             'epoch' => $timestamp,
             'tds' => $tds,
             'turbidity' => $turbidity,
@@ -54,7 +54,7 @@ if ($action === 'seed_history') {
     
     write_json_file(DATA_FILE, $records);
     update_device_state([
-        'last_ping' => date('Y-m-d H:i:s'),
+        'last_ping' => date(DATETIME_FORMAT),
         'rssi' => -58,
         'free_ram' => 192400,
         'cpu_temp' => 41.8,
@@ -116,7 +116,7 @@ if ($action === 'simulate_reading') {
     
     $rec = [
         'id' => time() . '_' . rand(100, 999),
-        'timestamp' => date('Y-m-d H:i:s'),
+        'timestamp' => date(DATETIME_FORMAT),
         'epoch' => time(),
         'tds' => $tds,
         'turbidity' => $turbidity,
@@ -134,7 +134,7 @@ if ($action === 'simulate_reading') {
     $curDevState = get_device_state();
     $curUptime = isset($curDevState['uptime_sec']) ? intval($curDevState['uptime_sec']) : 0;
     update_device_state([
-        'last_ping' => date('Y-m-d H:i:s'),
+        'last_ping' => date(DATETIME_FORMAT),
         'valve_state' => $valveState,
         'valve_mode' => $settings['valve_control']['mode'],
         'cpu_temp' => round(rand(410, 440) / 10, 1),

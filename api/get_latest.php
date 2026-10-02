@@ -31,7 +31,7 @@ if (!empty($recentRecords)) {
 if (!$latestRecord) {
     $latestRecord = [
         'id' => 'init_1',
-        'timestamp' => date('Y-m-d H:i:s'),
+        'timestamp' => date(DATETIME_FORMAT),
         'epoch' => time(),
         'tds' => 180.0,
         'turbidity' => 1.2,
@@ -44,12 +44,15 @@ if (!$latestRecord) {
         'valve_state' => 1,
         'valve_mode' => 'auto'
     ];
+} else {
+    // Format latest record timestamp according to DD-MM-YYYY and HH:mm AM/PM
+    $latestRecord['timestamp'] = format_datetime(isset($latestRecord['epoch']) ? $latestRecord['epoch'] : $latestRecord['timestamp']);
 }
 
 // Check device online status (heartbeat within 35 seconds)
 $isOnline = false;
 if (!empty($deviceState['last_ping'])) {
-    $diff = time() - strtotime($deviceState['last_ping']);
+    $diff = time() - (is_numeric($deviceState['last_ping']) ? intval($deviceState['last_ping']) : strtotime($deviceState['last_ping']));
     $isOnline = ($diff <= 35);
 }
 
@@ -68,7 +71,8 @@ $index = 0;
 
 foreach ($recentRecords as $rec) {
     if ($index % $step === 0 || $index === count($recentRecords) - 1) {
-        $timeLabel = date('H:i:s', isset($rec['epoch']) ? $rec['epoch'] : strtotime($rec['timestamp']));
+        $ep = isset($rec['epoch']) ? $rec['epoch'] : strtotime($rec['timestamp']);
+        $timeLabel = date(TIME_FORMAT, $ep); // HH:mm AM/PM (Requirement 21)
         $chartData['labels'][] = $timeLabel;
         $chartData['tds'][] = floatval(isset($rec['tds']) ? $rec['tds'] : 0);
         $chartData['turbidity'][] = floatval(isset($rec['turbidity']) ? $rec['turbidity'] : 0);
@@ -78,15 +82,19 @@ foreach ($recentRecords as $rec) {
     $index++;
 }
 
+$formattedLastPing = !empty($deviceState['last_ping']) 
+    ? format_datetime(is_numeric($deviceState['last_ping']) ? intval($deviceState['last_ping']) : strtotime($deviceState['last_ping'])) 
+    : null;
+
 echo json_encode([
     'success' => true,
-    'timestamp' => date('Y-m-d H:i:s'),
+    'timestamp' => date(DATETIME_FORMAT),
     'latest' => $latestRecord,
     'device' => [
         'valve_state' => intval(isset($deviceState['valve_state']) ? $deviceState['valve_state'] : 1),
         'valve_mode' => isset($deviceState['valve_mode']) ? $deviceState['valve_mode'] : 'auto',
         'is_online' => $isOnline,
-        'last_ping' => isset($deviceState['last_ping']) ? $deviceState['last_ping'] : null,
+        'last_ping' => $formattedLastPing,
         'cpu_temp' => floatval(isset($deviceState['cpu_temp']) ? $deviceState['cpu_temp'] : 42.0),
         'free_ram' => intval(isset($deviceState['free_ram']) ? $deviceState['free_ram'] : 184320),
         'total_ram' => intval(isset($deviceState['total_ram']) ? $deviceState['total_ram'] : 327680),

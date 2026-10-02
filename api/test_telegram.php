@@ -38,7 +38,7 @@ $testSettings['telegram']['chat_id'] = $chatId;
 
 $message = "💧 <b>AquaSense IoT System</b>\n\n";
 $message .= "✅ <b>Telegram Notification Test Successful!</b>\n";
-$message .= "Timestamp: " . date('Y-m-d H:i:s') . "\n";
+$message .= "Timestamp: " . date(DATETIME_FORMAT) . " IST\n";
 $message .= "Your bot is configured and ready to dispatch real-time water quality warnings and solenoid valve alerts.";
 
 $result = send_telegram_alert($message, $testSettings);

@@ -43,6 +43,9 @@ AquaSense IoT is a complete end-to-end IoT Smart Water Quality Monitoring and Au
 10. **Secure Authentication:**
     - Operator Login and Registration system backed by `users.json` with `password_hash` encryption.
     - `users.json` is protected and ignored in `.gitignore`.
+11. **Timezone & DateTime Standardization (Requirement #21):**
+    - Configured for **Asia/Kolkata (+05:30)** across the entire system.
+    - All telemetry records, historical logs, live system clocks, Telegram alerts, Chart.js timestamps, and CSV export files consistently use the **`DD-MM-YYYY` and `HH:mm AM/PM`** format (e.g. `02-10-2026 03:09 PM`).
 
 ---
 
