@@ -12,3 +12,4 @@ cookies.txt
 
 # Local Server and temporary files
 scratch/
+*.zip

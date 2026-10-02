@@ -12,8 +12,8 @@
         "ph_max": 8.5
     },
     "valve_control": {
-        "mode": "auto",
-        "manual_state": 1,
+        "mode": "manual",
+        "manual_state": 0,
         "auto_shutoff_on_bad": true,
         "auto_reopen_on_good": true
     },

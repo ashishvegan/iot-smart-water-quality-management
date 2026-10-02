@@ -257,13 +257,22 @@ void handleSetupWebRoot() {
   html += "button{width:100%;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:6px;font-weight:bold;margin-top:12px;cursor:pointer;}";
   html += "</style></head><body><div class='card'>";
   html += "<h2>💧 AquaSense ESP32</h2><p style='font-size:12px;color:#94a3b8;'>Configure Target Wi-Fi & Web Dashboard Host</p>";
+  String curSsid = (strlen(wifiSSID) > 0) ? String(wifiSSID) : String(DEFAULT_WIFI_SSID);
+  String curPass = (strlen(wifiPass) > 0) ? String(wifiPass) : "";
+  String curHost = (strlen(serverHost) > 0) ? String(serverHost) : String(DEFAULT_SERVER_IP);
+
   html += "<form method='POST' action='/save'>";
-  html += "<input type='text' name='ssid' placeholder='Target Wi-Fi SSID' value='" + String(DEFAULT_WIFI_SSID) + "' required>";
-  html += "<input type='password' name='pass' placeholder='Wi-Fi Password' value='" + String(DEFAULT_WIFI_PASS) + "'>";
-  html += "<input type='text' name='host' placeholder='Dashboard Domain or IP' value='" + String(DEFAULT_SERVER_IP) + "' required>";
-  html += "<input type='number' name='port' placeholder='Server Port (80 or 443)' value='" + String(DEFAULT_SERVER_PORT) + "' required>";
-  html += "<input type='text' name='cookie' placeholder='Cookie Bypass (Optional)' value='" + String(serverCookie) + "'>";
-  html += "<button type='submit'>Save & Connect</button>";
+  html += "<div style='text-align:left;font-size:12px;margin-bottom:4px;color:#38bdf8;'>Target Wi-Fi SSID (2.4 GHz Only):</div>";
+  html += "<input type='text' name='ssid' placeholder='e.g. MyHomeWiFi' value='" + curSsid + "' required>";
+  html += "<div style='text-align:left;font-size:12px;margin-bottom:4px;color:#38bdf8;'>Wi-Fi Password:</div>";
+  html += "<input type='password' name='pass' placeholder='Leave empty if open network' value='" + curPass + "'>";
+  html += "<div style='text-align:left;font-size:12px;margin-bottom:4px;color:#38bdf8;'>Dashboard Host / Domain:</div>";
+  html += "<input type='text' name='host' placeholder='waterquality.infinityfree.io' value='" + curHost + "' required>";
+  html += "<div style='text-align:left;font-size:12px;margin-bottom:4px;color:#38bdf8;'>Port (80 for HTTP, 443 for HTTPS):</div>";
+  html += "<input type='number' name='port' placeholder='80' value='" + String(serverPort) + "' required>";
+  html += "<div style='text-align:left;font-size:12px;margin-bottom:4px;color:#38bdf8;'>Bypass Cookie (Optional):</div>";
+  html += "<input type='text' name='cookie' placeholder='e.g. __test=...' value='" + String(serverCookie) + "'>";
+  html += "<button type='submit'>Save Credentials & Connect</button>";
   html += "</form></div></body></html>";
   setupServer.send(200, "text/html", html);
 }
@@ -273,20 +282,28 @@ void handleSetupSave() {
   String sPass = setupServer.arg("pass");
   String sHost = setupServer.arg("host");
   uint16_t uPort = setupServer.arg("port").toInt();
+  if (uPort == 0) uPort = 80;
   String sCookie = setupServer.arg("cookie");
+
+  // Trim extraneous whitespace from mobile auto-correct/pasting
+  sSsid.trim();
+  sPass.trim();
+  sHost.trim();
+  sCookie.trim();
 
   saveConfigToEEPROM(sSsid, sPass, sHost, uPort, sCookie);
 
   String resp = "<html><body style='background:#081325;color:#38bdf8;text-align:center;padding:50px;'>";
-  resp += "<h2>Credentials Saved!</h2><p>ESP32 is restarting and connecting to target Wi-Fi...</p></body></html>";
+  resp += "<h2>Credentials Saved!</h2><p>Connecting to <strong>" + sSsid + "</strong>...</p><p>ESP32 is rebooting now.</p></body></html>";
   setupServer.send(200, "text/html", resp);
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Config Saved!");
+  lcd.print("Saved: ");
+  lcd.print(sSsid.substring(0, 9));
   lcd.setCursor(0, 1);
   lcd.print("Rebooting ESP32");
-  delay(2000);
+  delay(1500);
   ESP.restart();
 }
 
@@ -514,15 +531,31 @@ void setup() {
   lcd.setCursor(0, 0);
   lcd.print("Connecting WiFi:");
   lcd.setCursor(0, 1);
-  lcd.print(wifiSSID);
+  lcd.print(String(wifiSSID).substring(0, 16));
 
+  // Clean Wi-Fi radio state and set Station mode
+  WiFi.disconnect(true);
+  delay(200);
   WiFi.mode(WIFI_STA);
+  WiFi.setAutoReconnect(true);
+  delay(100);
+
+  Serial.printf("Initiating connection with SSID: '%s' (Pass length: %d)\n", wifiSSID, strlen(wifiPass));
   WiFi.begin(wifiSSID, wifiPass);
 
+  // 20 Seconds Timeout (40 iterations * 500ms) with LCD countdown
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 25) { // 12.5 seconds timeout
+  while (WiFi.status() != WL_CONNECTED && attempts < 40) {
     delay(500);
     Serial.print(".");
+    if (attempts % 2 == 0) {
+      // Show remaining seconds in top right of LCD
+      lcd.setCursor(13, 0);
+      int remaining = (40 - attempts) / 2;
+      if (remaining < 10) lcd.print(" ");
+      lcd.print(remaining);
+      lcd.print("s");
+    }
     attempts++;
   }
 
@@ -536,7 +569,25 @@ void setup() {
     lcd.print(WiFi.localIP().toString());
     delay(2000);
   } else {
-    Serial.println("\nFailed to connect to target Wi-Fi! Reverting to Setup Mode...");
+    int failStatus = WiFi.status();
+    Serial.printf("\nFailed to connect to Wi-Fi! Status Code: %d\n", failStatus);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+
+    if (failStatus == WL_NO_SSID_AVAIL) {
+      lcd.print("SSID Not Found!");
+      Serial.println("Diagnosis: SSID not found! Verify 2.4 GHz band and SSID spelling.");
+    } else if (failStatus == WL_CONNECT_FAILED) {
+      lcd.print("Wrong Password!");
+      Serial.println("Diagnosis: Authentication failed! Verify Wi-Fi password.");
+    } else {
+      lcd.print("Conn Timeout!");
+      Serial.println("Diagnosis: Connection timed out or weak signal.");
+    }
+
+    lcd.setCursor(0, 1);
+    lcd.print("Starting AP Mode");
+    delay(3000);
     enterSetupMode();
   }
 }
