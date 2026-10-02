@@ -1,0 +1,47 @@
+I'm going to create an IoT Project with Web Dashboard
+Hardware Part is Ready
+
+Sensors:
+1. TDS Sensor - 3 Pin (-,+,A)
+2. Turbidity Sensor - 3 Pin (-,+,A)
+3. DS18B20 Temperature Sensor - 3 Pin (GND,VCC,Data)
+4. pH Sensor - 6 Pin (To, Do,Po, G,G,V+)
+
+Actuators:
+1. 16x2 LCD I2C 0x27
+2. Relay Module 5V DC
+Relay 1: When LOW: SV ON Means Water Flow Enable (Automatic + Manual Override)
+
+Microcontroller Board:
+1. ESP32 30 Pin with Expansion Board both 3.3V and 5V available
+
+Create Arduino Code (C++) for ESP32 Microcontroller Board:
+Recommend Proper Pins for Sensors and Actuators
+
+
+
+Web Dashboard (HTML, DaisyUI, PHP, JSON Database):
+1. Should be Responsive and Clean UI
+2. Live Reading of All Sensors (TDS, Turbidity, Temperature, pH)
+3. Realtime Update Every 10 Seconds
+4. Line Graph for All Sensors for Last 1 Hour (Update Every 10 Sec)
+5. Use JSON Based Database data.json
+6. Login & Registration users.json
+7. Manual & Automatic Override of Solenoid Valve Relay 1
+8. If Water Quality is Bad: Generate Alert (Change UI in Alert Theme) in Web App by playing some sounds and also send Telegram Notification
+9. In Settings user can configure Telegram API Key, Min/Max Ranges for each Sensor and Auto On/Off of Relay based on Sensor Values
+10. In Settings Custom Option for App Name and Footer Text
+11. In Settings Upload Logo
+12. In Settings Wifi Credentials
+The ESP32 Arduino Code Should Go On Setup Mode - It Will Display temporary WiFi Hotspot Name and Password on LCD when Connected
+it will load default WiFi Configuration from Web Application then after reboot it will be connected to WiFi mentioned in the Settings & Save this in EEPROM
+Add Reset Button on Web App when Clicked it will delete all Sensor Records, Delete EEPROM Data so ESP32 will go again on Setup Mode
+13. Show Graphs on Web Page
+14. On Settings page show CPU Temp/Usage/RAM/Free Memory of ESP32 Board (If Possible without Harming/Disturbing Project Core Features)
+15. Show All Records in Separate Page with Pagination latest records first
+16. Export Data Option in CSV Format
+17.As this Project is Related to Water so make Web Theme in Water Blue Color & If possible use Better UI/UX with Animations
+18. Everytime you do updates in code push it one Github https://www.github.com/ashishvegan/iot-smart-water-quality-management
+19. Gitignore users.json file in .gitignore file
+20. IMPORTANT - Only use PHP if Required
+21. TimeZOne Asia Kolkata +5:30 DD-MM-YYYY and HH:mm AM 

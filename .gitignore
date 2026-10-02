@@ -1,0 +1,11 @@
+# System and Environment files
+.DS_Store
+Thumbs.db
+*.log
+
+# Sensitive User Credentials
+users.json
+data/users.json
+
+# Local Server and temporary files
+scratch/

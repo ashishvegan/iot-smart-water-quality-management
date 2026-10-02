@@ -1,0 +1,12 @@
+{
+    "valve_state": 0,
+    "valve_mode": "auto",
+    "last_ping": "2026-10-02 07:38:53",
+    "ip_address": "127.0.0.1",
+    "rssi": -60,
+    "free_ram": 189433,
+    "total_ram": 327680,
+    "cpu_temp": 41.4,
+    "uptime_sec": 460,
+    "reset_eeprom_pending": false
+}
