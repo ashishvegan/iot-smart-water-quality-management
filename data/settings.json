@@ -1,0 +1,35 @@
+{
+    "app_name": "AquaSense IoT",
+    "footer_text": "Smart Water Quality Monitoring & Automatic SV Valve Management System \u00a9 2026",
+    "logo_path": "assets/images/logo.svg",
+    "thresholds": {
+        "tds_min": 50,
+        "tds_max": 500,
+        "turbidity_max": 5,
+        "temp_min": 15,
+        "temp_max": 35,
+        "ph_min": 6.5,
+        "ph_max": 8.5
+    },
+    "valve_control": {
+        "mode": "auto",
+        "manual_state": 1,
+        "auto_shutoff_on_bad": true,
+        "auto_reopen_on_good": true
+    },
+    "telegram": {
+        "enabled": false,
+        "bot_token": "",
+        "chat_id": "",
+        "last_alert_time": 0,
+        "cooldown_seconds": 300
+    },
+    "wifi": {
+        "ssid": "AquaSense_HomeWiFi",
+        "password": "WaterSecure2026",
+        "server_ip": "waterquality.infinityfree.io",
+        "server_url": "https://waterquality.infinityfree.io",
+        "server_port": 80,
+        "server_cookie": ""
+    }
+}

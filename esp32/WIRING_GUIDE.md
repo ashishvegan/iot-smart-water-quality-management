@@ -56,16 +56,22 @@ The ESP32 has two ADC units:
 
 ---
 
-## 🛠️ Setup Mode & Remote Reset Behavior
+## 🛠️ Setup Mode & Cloud Configuration
 1. **Initial Boot / Setup Mode:**
    - If EEPROM has no stored credentials, the ESP32 starts a local Wi-Fi Hotspot:
      - **SSID:** `AquaSense-Setup`
      - **Password:** `12345678`
    - LCD Line 1 displays: `AP: AquaSense-Set`
    - LCD Line 2 displays: `P: 12345678`
-   - Connect your phone/laptop to this hotspot and open `http://192.168.4.1` to enter target Wi-Fi and Web Server IP.
+   - Connect your phone/laptop to this hotspot and open `http://192.168.4.1` to enter target Wi-Fi and Web Server IP/Domain.
+   - For live deployment, set Server IP / Domain to:
+     - **Server Domain:** `waterquality.infinityfree.io` (or full URL `https://waterquality.infinityfree.io`)
+     - **Bypass Cookie:** Enter the `__test` cookie value if InfinityFree anti-bot protection requires it.
    - Alternatively, it automatically syncs target credentials stored in `data/settings.json`.
-2. **Remote Web App Reset (Requirement 38):**
+2. **Live Cloud Architecture:**
+   - The ESP32 code uses `WiFiClientSecure` with `client.setInsecure()` to communicate over HTTPS with `waterquality.infinityfree.io`.
+   - Sends standard browser User-Agent headers to ensure seamless telemetry ingestion.
+3. **Remote Web App Reset (Requirement 38):**
    - When the **Reset Button** is clicked on the Web App, the web app deletes all sensor history in `data.json` and queues an EEPROM reset flag.
    - On the next 10-second sync, the ESP32 reads `reset_eeprom: true`, clears its EEPROM memory, and restarts automatically into **Setup Mode**.
 

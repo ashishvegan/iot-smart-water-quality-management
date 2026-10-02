@@ -3,9 +3,12 @@
 Thumbs.db
 *.log
 
-# Sensitive User Credentials
+# Sensitive User Credentials & Hosting Keys
 users.json
 data/users.json
+infinity-free.txt
+*.txt.secret
+cookies.txt
 
 # Local Server and temporary files
 scratch/

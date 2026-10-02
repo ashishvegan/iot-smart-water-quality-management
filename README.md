@@ -8,6 +8,8 @@
 
 AquaSense IoT is a complete end-to-end IoT Smart Water Quality Monitoring and Automatic Solenoid Valve Control System. It continuously analyzes physical and biochemical properties of water (TDS, Turbidity, pH, and Temperature) using an ESP32 microcontroller, drives an I2C 16x2 LCD, and streams telemetry every 10 seconds to a modern water-themed web application with real-time graphs, emergency audio-visual alerts, Telegram bot notifications, and automated valve shut-off protection.
 
+🌐 **Live Cloud Deployment:** [https://waterquality.infinityfree.io/index.php](https://waterquality.infinityfree.io/index.php)
+
 ---
 
 ## 🌊 Key Features
@@ -67,17 +69,14 @@ AquaSense IoT is a complete end-to-end IoT Smart Water Quality Monitoring and Au
 
 ## 🚀 Getting Started
 
-### 1. Running the Web Application
-No external database or complicated installation required. Ensure PHP 5.6+ or 7.x+ or 8.x is installed:
-
+### 1. Live Cloud & Local Deployment
+- **Live Cloud URL:** [https://waterquality.infinityfree.io/index.php](https://waterquality.infinityfree.io/index.php)
+- **Local Testing:** Ensure PHP 5.6+ or 7.x+ or 8.x is installed:
 ```bash
 # Start PHP built-in web server from the project directory
 php -S 0.0.0.0:8000
 ```
-Then navigate to:
-```
-http://localhost:8000
-```
+Then navigate to `http://localhost:8000` (or `https://waterquality.infinityfree.io`).
 
 - **Default Administrator Credentials:**
   - **Username:** `admin`
@@ -90,7 +89,10 @@ http://localhost:8000
    - `OneWire`
    - `DallasTemperature`
 3. Select board: **ESP32 Dev Module** (or DOIT ESP32 DEVKIT V1).
-4. Update the default Wi-Fi SSID and Web Server IP in the sketch or use the onboard **Setup Mode** / Web App Settings.
+4. Update the default Wi-Fi SSID and Web Server IP/Domain in the sketch:
+   - Default Server: `waterquality.infinityfree.io`
+   - Scheme: `https://` (supported via `WiFiClientSecure`)
+   - Or configure it dynamically via the onboard **Setup Mode AP** (`192.168.4.1`) or the Web App's **Settings -> Wi-Fi & Cloud Server** section.
 5. Upload the code to your ESP32.
 
 ---

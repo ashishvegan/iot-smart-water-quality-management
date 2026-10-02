@@ -25,6 +25,7 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
@@ -55,19 +56,21 @@ DallasTemperature tempSensor(&oneWire);
 // ==============================================================================
 // EEPROM CONFIGURATION & MEMORY MAP
 // ==============================================================================
-#define EEPROM_SIZE       512
-#define EEPROM_MAGIC_BYTE 0xA5  // Magic byte indicates valid configuration saved
-#define ADDR_MAGIC        0
-#define ADDR_SSID         1     // 32 Bytes
-#define ADDR_PASS         33    // 64 Bytes
-#define ADDR_SERVER_IP    97    // 64 Bytes
-#define ADDR_SERVER_PORT  161   // 2 Bytes (uint16_t)
+#define EEPROM_SIZE        512
+#define EEPROM_MAGIC_BYTE  0xA5  // Magic byte indicates valid configuration saved
+#define ADDR_MAGIC         0
+#define ADDR_SSID          1     // 32 Bytes
+#define ADDR_PASS          33    // 64 Bytes
+#define ADDR_SERVER_IP     97    // 64 Bytes
+#define ADDR_SERVER_PORT   161   // 2 Bytes (uint16_t)
+#define ADDR_SERVER_COOKIE 163   // 128 Bytes
 
-// Default / Fallback Wi-Fi Credentials for Initial Web App Setup Sync
-const char* DEFAULT_WIFI_SSID = "AquaSense_HomeWiFi";
-const char* DEFAULT_WIFI_PASS = "WaterSecure2026";
-const char* DEFAULT_SERVER_IP = "192.168.1.100";
-const uint16_t DEFAULT_SERVER_PORT = 80;
+// Default Deployed Cloud Server Credentials (waterquality.infinityfree.io)
+const char* DEFAULT_WIFI_SSID     = "AquaSense_HomeWiFi";
+const char* DEFAULT_WIFI_PASS     = "WaterSecure2026";
+const char* DEFAULT_SERVER_IP     = "waterquality.infinityfree.io";
+const uint16_t DEFAULT_SERVER_PORT  = 80;
+const char* DEFAULT_SERVER_COOKIE = "";
 
 // Temporary AP Setup Mode Credentials
 const char* AP_SSID = "AquaSense-Setup";
@@ -78,6 +81,7 @@ char wifiSSID[33] = "";
 char wifiPass[65] = "";
 char serverHost[65] = "";
 uint16_t serverPort = 80;
+char serverCookie[129] = "";
 
 bool isSetupMode = false;
 WebServer setupServer(80);
@@ -109,19 +113,20 @@ String readEEPROMString(int startAddr, int maxLen) {
   return String(buf);
 }
 
-void saveConfigToEEPROM(const String& ssid, const String& pass, const String& host, uint16_t port) {
+void saveConfigToEEPROM(const String& ssid, const String& pass, const String& host, uint16_t port, const String& cookie = "") {
   EEPROM.write(ADDR_MAGIC, EEPROM_MAGIC_BYTE);
   writeEEPROMString(ADDR_SSID, ssid, 32);
   writeEEPROMString(ADDR_PASS, pass, 64);
   writeEEPROMString(ADDR_SERVER_IP, host, 64);
   EEPROM.write(ADDR_SERVER_PORT, (port >> 8) & 0xFF);
   EEPROM.write(ADDR_SERVER_PORT + 1, port & 0xFF);
+  writeEEPROMString(ADDR_SERVER_COOKIE, cookie, 128);
   EEPROM.commit();
 }
 
 void clearEEPROMConfig() {
   EEPROM.write(ADDR_MAGIC, 0x00); // Invalidate magic byte
-  for (int i = 1; i < 200; i++) {
+  for (int i = 1; i < 300; i++) {
     EEPROM.write(i, 0x00);
   }
   EEPROM.commit();
@@ -136,6 +141,7 @@ bool loadConfigFromEEPROM() {
   String sPass = readEEPROMString(ADDR_PASS, 64);
   String sHost = readEEPROMString(ADDR_SERVER_IP, 64);
   uint16_t port = (EEPROM.read(ADDR_SERVER_PORT) << 8) | EEPROM.read(ADDR_SERVER_PORT + 1);
+  String sCookie = readEEPROMString(ADDR_SERVER_COOKIE, 128);
 
   if (sSsid.length() == 0 || port == 0) return false;
 
@@ -143,6 +149,7 @@ bool loadConfigFromEEPROM() {
   sPass.toCharArray(wifiPass, 65);
   sHost.toCharArray(serverHost, 65);
   serverPort = port;
+  sCookie.toCharArray(serverCookie, 129);
   return true;
 }
 
@@ -253,8 +260,9 @@ void handleSetupWebRoot() {
   html += "<form method='POST' action='/save'>";
   html += "<input type='text' name='ssid' placeholder='Target Wi-Fi SSID' value='" + String(DEFAULT_WIFI_SSID) + "' required>";
   html += "<input type='password' name='pass' placeholder='Wi-Fi Password' value='" + String(DEFAULT_WIFI_PASS) + "'>";
-  html += "<input type='text' name='host' placeholder='Dashboard Server IP' value='" + String(DEFAULT_SERVER_IP) + "' required>";
-  html += "<input type='number' name='port' placeholder='Server Port' value='" + String(DEFAULT_SERVER_PORT) + "' required>";
+  html += "<input type='text' name='host' placeholder='Dashboard Domain or IP' value='" + String(DEFAULT_SERVER_IP) + "' required>";
+  html += "<input type='number' name='port' placeholder='Server Port (80 or 443)' value='" + String(DEFAULT_SERVER_PORT) + "' required>";
+  html += "<input type='text' name='cookie' placeholder='Cookie Bypass (Optional)' value='" + String(serverCookie) + "'>";
   html += "<button type='submit'>Save & Connect</button>";
   html += "</form></div></body></html>";
   setupServer.send(200, "text/html", html);
@@ -265,8 +273,9 @@ void handleSetupSave() {
   String sPass = setupServer.arg("pass");
   String sHost = setupServer.arg("host");
   uint16_t uPort = setupServer.arg("port").toInt();
+  String sCookie = setupServer.arg("cookie");
 
-  saveConfigToEEPROM(sSsid, sPass, sHost, uPort);
+  saveConfigToEEPROM(sSsid, sPass, sHost, uPort, sCookie);
 
   String resp = "<html><body style='background:#081325;color:#38bdf8;text-align:center;padding:50px;'>";
   resp += "<h2>Credentials Saved!</h2><p>ESP32 is restarting and connecting to target Wi-Fi...</p></body></html>";
@@ -311,7 +320,7 @@ void enterSetupMode() {
 }
 
 // ==============================================================================
-// TELEMETRY HTTP POST TO WEB DASHBOARD API
+// TELEMETRY HTTP/HTTPS POST TO WEB DASHBOARD API
 // ==============================================================================
 void sendTelemetryToDashboard(float tds, float turbidity, float tempC, float phVal) {
   if (WiFi.status() != WL_CONNECTED) {
@@ -320,10 +329,44 @@ void sendTelemetryToDashboard(float tds, float turbidity, float tempC, float phV
   }
 
   HTTPClient http;
-  String url = "http://" + String(serverHost) + ":" + String(serverPort) + "/api/telemetry.php";
-  http.begin(url);
+  String hostStr = String(serverHost);
+  hostStr.trim();
+
+  // Build Target URL
+  String fullUrl = "";
+  if (hostStr.startsWith("http://") || hostStr.startsWith("https://")) {
+    fullUrl = hostStr;
+    if (!fullUrl.endsWith("/api/telemetry.php")) {
+      if (fullUrl.endsWith("/")) fullUrl += "api/telemetry.php";
+      else fullUrl += "/api/telemetry.php";
+    }
+  } else {
+    String proto = (serverPort == 443) ? "https://" : "http://";
+    fullUrl = proto + hostStr;
+    if (serverPort != 80 && serverPort != 443) {
+      fullUrl += ":" + String(serverPort);
+    }
+    fullUrl += "/api/telemetry.php";
+  }
+
+  WiFiClient client;
+  WiFiClientSecure secureClient;
+
+  if (fullUrl.startsWith("https://")) {
+    secureClient.setInsecure(); // Accept SSL cert for cloud host
+    http.begin(secureClient, fullUrl);
+  } else {
+    http.begin(client, fullUrl);
+  }
+
+  // Cloud Headers & InfinityFree Compatibility
   http.addHeader("Content-Type", "application/json");
-  http.setTimeout(4000);
+  http.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+  http.addHeader("Accept", "*/*");
+  if (strlen(serverCookie) > 0) {
+    http.addHeader("Cookie", serverCookie);
+  }
+  http.setTimeout(8000);
 
   // Read ESP32 Diagnostics
   uint32_t freeRam = ESP.getFreeHeap();
@@ -345,7 +388,7 @@ void sendTelemetryToDashboard(float tds, float turbidity, float tempC, float phV
   json += "\"ip\":\"" + ipAddr + "\"";
   json += "}";
 
-  Serial.print("Posting to: "); Serial.println(url);
+  Serial.print("Posting to: "); Serial.println(fullUrl);
   int httpCode = http.POST(json);
 
   if (httpCode > 0) {

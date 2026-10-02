@@ -74,12 +74,14 @@ function get_default_settings() {
             'cooldown_seconds' => 300   // 5 minutes between repeating alerts
         ],
         
-        // WiFi Configuration sent to ESP32
+        // WiFi & Cloud Server Configuration sent to ESP32
         'wifi' => [
             'ssid' => 'AquaSense_HomeWiFi',
             'password' => 'WaterSecure2026',
-            'server_ip' => '192.168.1.100', // Dashboard host IP for ESP32
-            'server_port' => 80
+            'server_ip' => 'waterquality.infinityfree.io', // Deployed domain
+            'server_url' => 'https://waterquality.infinityfree.io',
+            'server_port' => 80,
+            'server_cookie' => ''                          // Optional bypass cookie
         ]
     ];
 }

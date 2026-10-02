@@ -89,9 +89,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $settings['wifi']['password'] = trim(isset($_POST['wifi_password']) ? $_POST['wifi_password'] : '');
         $settings['wifi']['server_ip'] = trim(isset($_POST['server_ip']) ? $_POST['server_ip'] : '');
         $settings['wifi']['server_port'] = intval(isset($_POST['server_port']) ? $_POST['server_port'] : 80);
+        $settings['wifi']['server_cookie'] = trim(isset($_POST['server_cookie']) ? $_POST['server_cookie'] : '');
 
         save_settings($settings);
-        $successMsg = 'ESP32 Wi-Fi & Server credentials saved! ESP32 will synchronize on next query.';
+        $successMsg = 'ESP32 Wi-Fi & Cloud Server credentials saved! ESP32 will synchronize on next query.';
     }
 
     // 6. Factory Reset (Requirement 38)
@@ -390,8 +391,8 @@ require_once __DIR__ . '/includes/header.php';
 
       <div class="grid grid-cols-3 gap-3">
         <div class="col-span-2 form-control">
-          <label class="label py-1"><span class="label-text text-xs text-slate-300 font-semibold">Web Server IP / Host</span></label>
-          <input type="text" name="server_ip" value="<?= htmlspecialchars($settings['wifi']['server_ip']) ?>" placeholder="192.168.1.100" class="input input-bordered input-sm bg-slate-900 border-slate-700 font-mono text-xs" required>
+          <label class="label py-1"><span class="label-text text-xs text-slate-300 font-semibold">Web Server IP / Domain</span></label>
+          <input type="text" name="server_ip" value="<?= htmlspecialchars($settings['wifi']['server_ip']) ?>" placeholder="waterquality.infinityfree.io" class="input input-bordered input-sm bg-slate-900 border-slate-700 font-mono text-xs" required>
         </div>
         <div class="form-control">
           <label class="label py-1"><span class="label-text text-xs text-slate-300 font-semibold">Port</span></label>
@@ -399,8 +400,14 @@ require_once __DIR__ . '/includes/header.php';
         </div>
       </div>
 
-      <div class="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400">
-        💡 In Setup Mode, the ESP32 starts an AP, LCD displays SSID & Password. Once loaded, it connects to this Wi-Fi and saves to EEPROM.
+      <div class="form-control">
+        <label class="label py-1"><span class="label-text text-xs text-slate-300 font-semibold">Server Cookie (Optional for Cloud / InfinityFree)</span></label>
+        <input type="text" name="server_cookie" value="<?= htmlspecialchars(isset($settings['wifi']['server_cookie']) ? $settings['wifi']['server_cookie'] : '') ?>" placeholder="e.g. __test=xxxxxxxxxxxxxxxxxxxx" class="input input-bordered input-sm bg-slate-900 border-slate-700 font-mono text-xs">
+      </div>
+
+      <div class="p-3 rounded-lg bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 space-y-1">
+        <div>🌐 <strong>Live Host:</strong> <code class="text-sky-300">waterquality.infinityfree.io</code> (Port 80/443)</div>
+        <div>💡 In Setup Mode, the ESP32 starts an AP, LCD displays SSID & Password. Once loaded, it connects to this Wi-Fi and saves to EEPROM.</div>
       </div>
 
       <button type="submit" class="btn btn-sm btn-info w-full mt-2 font-semibold">Save Wi-Fi Configuration</button>
